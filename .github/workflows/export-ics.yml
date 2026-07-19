@@ -1,0 +1,47 @@
+name: Exportar iCal para Airbnb
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Cada 30 minutos (minutos 5 y 35, hora UTC), desfasado del import de Airbnb.
+    - cron: '5,35 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: export-ics
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+
+      - name: Generar el calendario iCal desde Firestore
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/export-ics.mjs
+
+      - name: Guardar cambios si el calendario cambió
+        run: |
+          if [ -n "$(git status --porcelain data/apto1.ics)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/apto1.ics
+            git commit -m "Actualizar iCal de reservas (Apartamento 1)"
+            git push
+            echo "iCal actualizado."
+          else
+            echo "Sin cambios en el iCal."
+          fi

@@ -1,0 +1,10 @@
+{
+  "name": "at-el-sotillo-manager",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Utilidades de sincronización de calendarios (se ejecutan en GitHub Actions).",
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
