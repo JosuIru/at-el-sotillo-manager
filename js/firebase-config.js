@@ -15,7 +15,7 @@
    ============================================================ */
 window.AGENDA_FIREBASE = {
   // ⬇️ Pon esto en true cuando hayas rellenado `config` y creado los usuarios.
-  activo: false,
+  activo: true,
 
   // Identificador del documento compartido por los 2 usuarios.
   // Déjalo así; si lo cambias DESPUÉS de usarlo, empezarías una agenda nueva.
@@ -24,12 +24,12 @@ window.AGENDA_FIREBASE = {
   // ⬇️ Pega aquí los datos de TU proyecto (son claves públicas de cliente;
   //     la seguridad real la dan las reglas de Firestore + el login).
   config: {
-    apiKey: 'TU_API_KEY',
-    authDomain: 'TU_PROYECTO.firebaseapp.com',
-    projectId: 'TU_PROYECTO',
-    storageBucket: 'TU_PROYECTO.appspot.com',
-    messagingSenderId: 'TU_SENDER_ID',
-    appId: 'TU_APP_ID',
+    apiKey: 'AIzaSyAQ2FdPZFDfF0SczMsP0MAqpF6EJ5crioQ',
+    authDomain: 'at-el-sotillo-2f05f.firebaseapp.com',
+    projectId: 'at-el-sotillo-2f05f',
+    storageBucket: 'at-el-sotillo-2f05f.firebasestorage.app',
+    messagingSenderId: '718811604742',
+    appId: '1:718811604742:web:4ce10db0dc49897e07e087',
   },
 
   // Versión del SDK de Firebase que se carga desde el CDN de Google.
