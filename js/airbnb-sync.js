@@ -25,13 +25,11 @@
       const resp = await fetch(RUTA, { cache: 'no-cache' });
       if (!resp.ok) return; // aún no se ha generado el archivo: nada que hacer
       const datos = await resp.json();
-      const cambios = S.sincronizarAirbnb(datos.reservas || []);
-      if (cambios > 0 && window.AgendaApp) {
-        window.AgendaApp.repintar();
-      }
+      S.aplicarAirbnb(datos.reservas || []);
+      if (window.AgendaApp) window.AgendaApp.repintar();
     } catch (err) {
-      // Sin conexión o archivo no disponible: se conserva lo ya sincronizado.
-      console.warn('No se pudo sincronizar con Airbnb (se sigue con lo local):', err);
+      // Sin conexión o archivo no disponible: se conserva lo ya cargado.
+      console.warn('No se pudo leer el calendario de Airbnb (se sigue con lo local):', err);
     }
   }
 

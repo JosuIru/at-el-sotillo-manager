@@ -184,6 +184,7 @@
         startX: e.clientX, startY: e.clientY,
         entrada0: reserva.entrada, salida0: reserva.salida, unidad0: reserva.unidadId,
         movido: false, preview: null,
+        soloLectura: !!reserva.importadaAirbnb, // Airbnb: no se puede mover/redimensionar
       };
       grid.classList.add('arrastrando');
       grid.setPointerCapture(e.pointerId);
@@ -191,6 +192,7 @@
 
     grid.addEventListener('pointermove', (e) => {
       if (!drag) return;
+      if (drag.soloLectura) return; // reservas de Airbnb: solo se puede ver el detalle
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
       if (!drag.movido && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) drag.movido = true;

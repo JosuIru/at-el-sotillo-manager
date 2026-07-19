@@ -37,6 +37,8 @@
   const TIPOS_UNIDAD = ['Apartamento', 'Casa completa', 'Habitación'];
 
   let estado = null;
+  // Capa de reservas importadas de Airbnb (solo lectura; NO se persiste ni sincroniza).
+  let overlayAirbnb = [];
   // Gancho opcional para la sincronización en la nube (Firebase). Si no hay
   // capa de sync registrada, todo funciona 100% local como siempre.
   let alGuardarRemoto = null;
@@ -88,6 +90,9 @@
     if (!estado.config) estado.config = estadoPorDefecto().config;
     ['unidades', 'reservas', 'clientes'].forEach((k) => { if (!Array.isArray(estado[k])) estado[k] = []; });
     estado.unidades.forEach((u) => { if (!Array.isArray(u.componentes)) u.componentes = []; });
+    // Migración: una versión anterior guardaba las reservas de Airbnb dentro del
+    // estado; ahora son una capa aparte de solo lectura. Las quitamos de aquí.
+    estado.reservas = estado.reservas.filter((r) => !r.importadaAirbnb);
   }
 
   function guardar() {
@@ -140,11 +145,15 @@
   }
 
   // ---- Reservas
-  function reservas() { return estado.reservas; }
-  function reservaPorId(id) { return estado.reservas.find((r) => r.id === id) || null; }
+  // Devuelve las reservas propias + la capa de Airbnb (solo lectura), fusionadas.
+  function reservas() { return overlayAirbnb.length ? estado.reservas.concat(overlayAirbnb) : estado.reservas; }
+  function reservaPorId(id) {
+    return estado.reservas.find((r) => r.id === id) || overlayAirbnb.find((r) => r.id === id) || null;
+  }
 
   function guardarReserva(datos) {
-    if (datos.id && reservaPorId(datos.id)) {
+    if (datos.id && String(datos.id).startsWith('ab_')) return; // Airbnb: solo lectura
+    if (datos.id && estado.reservas.some((r) => r.id === datos.id)) {
       const idx = estado.reservas.findIndex((r) => r.id === datos.id);
       estado.reservas[idx] = { ...estado.reservas[idx], ...datos };
     } else {
@@ -160,24 +169,21 @@
   }
 
   // ---- Sincronización con calendarios externos (Airbnb, iCal) ----------
-  // Concilia las reservas importadas de Airbnb dentro del estado. Es
-  // IDEMPOTENTE: solo persiste (y empuja a la nube) si algo cambió de verdad,
-  // así no genera bucles ni escrituras innecesarias entre dispositivos. Las
-  // reservas importadas llevan `importadaAirbnb: true` y son de solo lectura.
+  // Las reservas de Airbnb se mantienen como una CAPA SUPERPUESTA de solo
+  // lectura (`overlayAirbnb`), NO dentro del estado. No se guardan en local ni
+  // se sincronizan con la nube: cada dispositivo las lee del mismo JSON público
+  // (data/airbnb.json). Así la sincronización de Firebase (que reemplaza el
+  // estado) nunca las borra, y no hay duplicados ni bucles entre dispositivos.
   // `items` = [{ uid, unidadId, entrada, salida, tipo }] (tipo: 'reserva'|'bloqueo').
-  function sincronizarAirbnb(items) {
-    if (!Array.isArray(items)) return 0;
-    let cambios = 0;
-    const vistos = new Set();
-
-    items.forEach((it) => {
-      if (!it || !it.uid || !it.unidadId || !it.entrada || !it.salida) return;
-      const id = 'ab_' + it.uid;
-      vistos.add(id);
-      const esBloqueo = it.tipo === 'bloqueo';
-      const idx = estado.reservas.findIndex((r) => r.id === id);
-      if (idx === -1) {
-        estado.reservas.push({
+  function aplicarAirbnb(items) {
+    if (!Array.isArray(items)) { overlayAirbnb = []; return; }
+    const limpieza = (estado && estado.airbnbLimpieza) || {};
+    overlayAirbnb = items
+      .filter((it) => it && it.uid && it.unidadId && it.entrada && it.salida)
+      .map((it) => {
+        const esBloqueo = it.tipo === 'bloqueo';
+        const id = 'ab_' + it.uid;
+        return {
           id,
           importadaAirbnb: true,
           origen: esBloqueo ? 'bloqueo' : 'airbnb',
@@ -191,34 +197,23 @@
           pagado: 0,
           estadoPago: 'pagado',
           observaciones: esBloqueo ? 'Airbnb · no disponible' : 'Importada de Airbnb',
-          limpiezaHecha: false,
-          creada: U.hoyISO(),
-        });
-        cambios++;
-      } else {
-        // Actualizamos solo las fechas/unidad; conservamos lo editable en local
-        // (p. ej. si se marcó la limpieza hecha).
-        const r = estado.reservas[idx];
-        if (r.entrada !== it.entrada || r.salida !== it.salida || r.unidadId !== it.unidadId) {
-          r.entrada = it.entrada;
-          r.salida = it.salida;
-          r.unidadId = it.unidadId;
-          cambios++;
-        }
-      }
-    });
-
-    // Eliminamos las importadas de Airbnb que ya no están en el calendario.
-    const antes = estado.reservas.length;
-    estado.reservas = estado.reservas.filter((r) => !r.importadaAirbnb || vistos.has(r.id));
-    cambios += antes - estado.reservas.length;
-
-    if (cambios > 0) guardar();
-    return cambios;
+          limpiezaHecha: !!limpieza[id],
+        };
+      });
   }
 
   // Marca (o desmarca) la limpieza hecha tras la salida de una reserva.
   function marcarLimpieza(id, hecha) {
+    // Reservas de Airbnb: no están en el estado; guardamos solo el "hecho" en
+    // un pequeño mapa que sí se sincroniza (por su UID estable).
+    if (String(id).startsWith('ab_')) {
+      if (!estado.airbnbLimpieza) estado.airbnbLimpieza = {};
+      if (hecha) estado.airbnbLimpieza[id] = true; else delete estado.airbnbLimpieza[id];
+      const ov = overlayAirbnb.find((r) => r.id === id);
+      if (ov) ov.limpiezaHecha = !!hecha;
+      guardar();
+      return;
+    }
     const r = reservaPorId(id);
     if (!r) return;
     r.limpiezaHecha = !!hecha;
@@ -275,7 +270,7 @@
     ORIGENES, ESTADOS_PAGO, TIPOS_UNIDAD,
     cargar, guardar, obtener, config, moneda, origen, estadoPago,
     unidades, unidadPorId, guardarUnidad, eliminarUnidad,
-    reservas, reservaPorId, guardarReserva, eliminarReserva, marcarLimpieza, sincronizarAirbnb,
+    reservas, reservaPorId, guardarReserva, eliminarReserva, marcarLimpieza, aplicarAirbnb,
     clientes, clientePorId, guardarCliente, eliminarCliente,
     guardarConfig, exportarJSON, importarJSON, reiniciar,
     registrarSync, aplicarRemoto,
