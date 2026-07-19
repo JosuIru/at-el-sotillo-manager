@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Reglas de seguridad de Firestore para AT El Sotillo Manager.
+// Sólo usuarios autenticados (los que crees en Authentication) pueden leer
+// y escribir la agenda. Nadie sin sesión tiene acceso.
+//
+// Publícalas en: Consola de Firebase → Firestore Database → Reglas → Publicar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // El documento compartido con toda la agenda (agendas/el-sotillo).
+    match /agendas/{espacio} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Por defecto, todo lo demás queda bloqueado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
