@@ -26,7 +26,7 @@
 
   function render(contenedor) {
     if (!S.unidades().length) {
-      contenedor.innerHTML = `<h2>Planning</h2>
+      contenedor.innerHTML = `<h2>Calendario</h2>
         <div class="vacio"><div class="vacio__icono">🛏️</div>Aún no hay unidades.
         <br><button class="btn btn--primario mt" id="calIr">Crear unidad</button></div>`;
       document.getElementById('calIr').onclick = () => window.AgendaApp.irA('alojamientos');
@@ -45,7 +45,7 @@
 
     contenedor.innerHTML = `
       <div class="fila fila--between">
-        <h2>Planning</h2>
+        <h2>Calendario</h2>
         <div class="fila">
           <button class="btn" id="calDisponibilidad">🔎 Disponibilidad</button>
           <button class="btn btn--primario btn--grande" id="calNueva">➕ Nueva reserva</button>

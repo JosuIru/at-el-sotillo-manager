@@ -4,7 +4,7 @@
    Estrategia: cache-first para los recursos propios; al cambiar de
    versión (VERSION) se limpian las cachés antiguas.
    ============================================================ */
-const VERSION = 'elsotillo-v3';
+const VERSION = 'elsotillo-v4';
 const RECURSOS = [
   './',
   './index.html',
