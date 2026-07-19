@@ -125,7 +125,7 @@
         <td>${esBloqueo ? '<span class="tenue">—</span>' : insigniaPago(r)}</td>
         <td class="nowrap">${esBloqueo ? '—' : U.formatoDinero(r.precioTotal, S.moneda())}</td>
         <td><div class="tabla__acciones">
-          ${r.importadaAirbnb ? '<span class="tenue" title="Importada de Airbnb (solo lectura)">🔗</span>' : `
+          ${r.importadaAirbnb ? `<button class="btn btn--sm btn--fantasma" data-editar="${r.id}" title="Editar datos (Airbnb)">✏️</button>` : `
           <button class="btn btn--sm btn--fantasma" data-editar="${r.id}" title="Editar">✏️</button>
           <button class="btn btn--sm btn--fantasma" data-borrar="${r.id}" title="Eliminar">🗑️</button>`}
         </div></td>
@@ -151,35 +151,121 @@
     const esAirbnb = !!r.importadaAirbnb;
     const f = (k, v) => `<div class="detalle-fila"><span class="detalle-fila__k">${k}</span><span class="detalle-fila__v">${v}</span></div>`;
 
-    // Las reservas importadas de Airbnb son de solo lectura (se actualizan solas).
+    // Airbnb: las fechas/unidad vienen del calendario (solo lectura), pero el
+    // resto de datos (nombre, personas, precio…) se pueden editar a mano.
     const pie = esAirbnb
-      ? `<p class="suave" style="font-size:13px;margin-top:16px">🔗 Importada de Airbnb. Se sincroniza automáticamente y no se puede editar aquí.</p>`
+      ? `<div class="modal__pie mt">
+        <span class="suave" style="font-size:12px">🔗 Fechas desde Airbnb</span>
+        <button class="btn btn--primario" id="detEditarAirbnb">✏️ Editar datos</button>
+      </div>`
       : `<div class="modal__pie mt">
         <button class="btn btn--peligro" id="detBorrar">🗑️ Eliminar</button>
         <button class="btn btn--primario" id="detEditar">✏️ Editar</button>
       </div>`;
 
-    UI.abrirModal(esBloqueo ? '🔒 Bloqueo' : (esAirbnb ? '🩷 Reserva Airbnb' : (r.cliente || 'Reserva')), `
+    UI.abrirModal(esBloqueo ? '🔒 Bloqueo' : (esAirbnb ? (r.cliente && r.cliente !== 'Reserva Airbnb' ? U.escapar(r.cliente) : '🩷 Reserva Airbnb') : (r.cliente || 'Reserva')), `
       <div style="margin-bottom:12px"><span class="insignia" style="background:${ori.color};color:#fff">${ori.emoji} ${ori.etiqueta}</span></div>
       ${f('Alojamiento', unidad ? U.escapar(unidad.nombre) : '—')}
       ${unidad && unidad.componentes && unidad.componentes.length ? f('Bloquea', unidad.componentes.map((c) => { const x = S.unidadPorId(c); return x ? U.escapar(x.nombre) : c; }).join(', ')) : ''}
+      ${esAirbnb && r.cliente && r.cliente !== 'Reserva Airbnb' ? f('Cliente', U.escapar(r.cliente)) : ''}
       ${f('Entrada', U.formatoLargo(r.entrada))}
       ${f('Salida', U.formatoLargo(r.salida))}
       ${f('Noches', U.noches(r.entrada, r.salida))}
-      ${!esBloqueo && !esAirbnb ? f('Personas', r.personas || 1) : ''}
-      ${!esBloqueo && !esAirbnb && r.telefono ? f('Teléfono', `<a href="tel:${U.escapar(r.telefono)}">${U.escapar(r.telefono)}</a>`) : ''}
-      ${!esBloqueo && !esAirbnb ? f('Precio', U.formatoDinero(r.precioTotal, S.moneda())) : ''}
-      ${!esBloqueo && !esAirbnb ? f('Pagado', `${U.formatoDinero(r.pagado, S.moneda())} · ${S.estadoPago(r.estadoPago).etiqueta}`) : ''}
-      ${!esBloqueo && !esAirbnb && M.saldo(r) > 0 ? f('Saldo', `<span style="color:var(--color-error)">${U.formatoDinero(M.saldo(r), S.moneda())}</span>`) : ''}
-      ${r.observaciones ? `<div class="mt"><strong>Observaciones:</strong><br>${U.escapar(r.observaciones)}</div>` : ''}
+      ${!esBloqueo ? f('Personas', r.personas || 1) : ''}
+      ${!esBloqueo && r.telefono ? f('Teléfono', `<a href="tel:${U.escapar(r.telefono)}">${U.escapar(r.telefono)}</a>`) : ''}
+      ${!esBloqueo ? f('Precio', U.formatoDinero(r.precioTotal, S.moneda())) : ''}
+      ${!esBloqueo ? f('Pagado', `${U.formatoDinero(r.pagado, S.moneda())} · ${S.estadoPago(r.estadoPago).etiqueta}`) : ''}
+      ${!esBloqueo && M.saldo(r) > 0 ? f('Saldo', `<span style="color:var(--color-error)">${U.formatoDinero(M.saldo(r), S.moneda())}</span>`) : ''}
+      ${r.observaciones && !(esAirbnb && r.observaciones === 'Importada de Airbnb') ? `<div class="mt"><strong>Observaciones:</strong><br>${U.escapar(r.observaciones)}</div>` : ''}
       ${pie}
     `);
-    if (!esAirbnb) {
+    if (esAirbnb) {
+      document.getElementById('detEditarAirbnb').onclick = () => abrirFormularioAirbnb(id);
+    } else {
       document.getElementById('detEditar').onclick = () => abrirFormulario(id);
       document.getElementById('detBorrar').onclick = async () => {
         if (await UI.confirmar('¿Eliminar?')) { S.eliminarReserva(id); UI.toast('Eliminada', 'exito'); UI.cerrarModal(); window.AgendaApp.repintar(); }
       };
     }
+  }
+
+  // ---------------------------------------------------------
+  // Formulario de datos de una reserva de Airbnb (nombre, personas, precio…)
+  // Las fechas y la unidad vienen de Airbnb y no se editan aquí.
+  // ---------------------------------------------------------
+  function abrirFormularioAirbnb(id) {
+    const r = S.reservaPorId(id);
+    if (!r) return;
+    const unidad = S.unidadPorId(r.unidadId);
+    const nombreActual = (r.cliente && r.cliente !== 'Reserva Airbnb') ? r.cliente : '';
+    const obsActual = (r.observaciones && r.observaciones !== 'Importada de Airbnb') ? r.observaciones : '';
+
+    UI.abrirModal('🩷 Datos de la reserva de Airbnb', `
+      <form id="formAirbnb" autocomplete="off">
+        <p class="suave" style="font-size:13px;margin-top:0">
+          ${unidad ? U.escapar(unidad.nombre) : ''} · ${U.formatoCorto(r.entrada)} → ${U.formatoCorto(r.salida)}
+          (${U.noches(r.entrada, r.salida)} noches). Las fechas se gestionan desde Airbnb.
+        </p>
+
+        <div class="campo">
+          <label>Nombre del cliente</label>
+          <input name="cliente" value="${U.escapar(nombreActual)}" placeholder="Nombre del huésped" />
+        </div>
+        <div class="campos-2">
+          <div class="campo">
+            <label>Teléfono</label>
+            <input name="telefono" value="${U.escapar(r.telefono || '')}" placeholder="+34 …" />
+          </div>
+          <div class="campo">
+            <label>Personas</label>
+            <input name="personas" type="number" min="1" value="${r.personas || 2}" />
+          </div>
+        </div>
+        <div class="campos-2">
+          <div class="campo">
+            <label>Precio total (${S.moneda()})</label>
+            <input name="precioTotal" type="number" min="0" step="0.01" value="${r.precioTotal || ''}" placeholder="0" />
+          </div>
+          <div class="campo">
+            <label>Estado de pago</label>
+            <select name="estadoPago">
+              ${S.ESTADOS_PAGO.map((e) => `<option value="${e.id}" ${r.estadoPago === e.id ? 'selected' : ''}>${e.etiqueta}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="campo">
+          <label>Pagado / anticipo (${S.moneda()})</label>
+          <input name="pagado" type="number" min="0" step="0.01" value="${r.pagado || 0}" />
+        </div>
+        <div class="campo">
+          <label>Observaciones</label>
+          <textarea name="observaciones" placeholder="Hora de llegada, peticiones…">${U.escapar(obsActual)}</textarea>
+        </div>
+
+        <div class="modal__pie">
+          <button type="button" class="btn" id="formAirbnbCancelar">Cancelar</button>
+          <button type="submit" class="btn btn--primario btn--grande">Guardar</button>
+        </div>
+      </form>
+    `);
+
+    const form = document.getElementById('formAirbnb');
+    document.getElementById('formAirbnbCancelar').onclick = UI.cerrarModal;
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      S.guardarDatosAirbnb(id, {
+        cliente: form.cliente.value.trim() || 'Reserva Airbnb',
+        telefono: form.telefono.value.trim(),
+        personas: Number(form.personas.value) || 1,
+        precioTotal: Number(form.precioTotal.value) || 0,
+        pagado: Number(form.pagado.value) || 0,
+        estadoPago: form.estadoPago.value,
+        observaciones: form.observaciones.value.trim(),
+      });
+      UI.toast('Datos guardados', 'exito');
+      UI.cerrarModal();
+      window.AgendaApp.repintar();
+    };
   }
 
   // ---------------------------------------------------------
@@ -192,7 +278,7 @@
       return;
     }
     const r = id ? S.reservaPorId(id) : null;
-    if (r && r.importadaAirbnb) { verDetalle(id); return; } // solo lectura
+    if (r && r.importadaAirbnb) { abrirFormularioAirbnb(id); return; } // formulario específico de Airbnb
     const hoy = U.hoyISO();
     const val = {
       unidadId: (r && r.unidadId) || (datosIniciales && datosIniciales.unidadId) || S.unidades()[0].id,

@@ -93,6 +93,15 @@
     // Migración: una versión anterior guardaba las reservas de Airbnb dentro del
     // estado; ahora son una capa aparte de solo lectura. Las quitamos de aquí.
     estado.reservas = estado.reservas.filter((r) => !r.importadaAirbnb);
+    // Datos editables de las reservas de Airbnb (nombre, personas, precio…).
+    if (!estado.airbnbDatos) estado.airbnbDatos = {};
+    // Migración del antiguo mapa de limpieza al nuevo mapa de datos.
+    if (estado.airbnbLimpieza) {
+      Object.keys(estado.airbnbLimpieza).forEach((id) => {
+        estado.airbnbDatos[id] = { ...(estado.airbnbDatos[id] || {}), limpiezaHecha: true };
+      });
+      delete estado.airbnbLimpieza;
+    }
   }
 
   function guardar() {
@@ -177,41 +186,53 @@
   // `items` = [{ uid, unidadId, entrada, salida, tipo }] (tipo: 'reserva'|'bloqueo').
   function aplicarAirbnb(items) {
     if (!Array.isArray(items)) { overlayAirbnb = []; return; }
-    const limpieza = (estado && estado.airbnbLimpieza) || {};
+    const extras = (estado && estado.airbnbDatos) || {};
     overlayAirbnb = items
       .filter((it) => it && it.uid && it.unidadId && it.entrada && it.salida)
       .map((it) => {
         const esBloqueo = it.tipo === 'bloqueo';
         const id = 'ab_' + it.uid;
+        // Datos que el usuario haya añadido a mano (nombre, personas, precio…).
+        const extra = extras[id] || {};
         return {
           id,
           importadaAirbnb: true,
           origen: esBloqueo ? 'bloqueo' : 'airbnb',
-          cliente: esBloqueo ? '' : 'Reserva Airbnb',
-          telefono: '',
-          personas: esBloqueo ? 0 : 2,
+          cliente: extra.cliente != null ? extra.cliente : (esBloqueo ? '' : 'Reserva Airbnb'),
+          telefono: extra.telefono != null ? extra.telefono : '',
+          personas: extra.personas != null ? extra.personas : (esBloqueo ? 0 : 2),
           unidadId: it.unidadId,
           entrada: it.entrada,
           salida: it.salida,
-          precioTotal: 0,
-          pagado: 0,
-          estadoPago: 'pagado',
-          observaciones: esBloqueo ? 'Airbnb · no disponible' : 'Importada de Airbnb',
-          limpiezaHecha: !!limpieza[id],
+          precioTotal: extra.precioTotal != null ? extra.precioTotal : 0,
+          pagado: extra.pagado != null ? extra.pagado : 0,
+          estadoPago: extra.estadoPago != null ? extra.estadoPago : 'pagado',
+          observaciones: extra.observaciones != null ? extra.observaciones
+            : (esBloqueo ? 'Airbnb · no disponible' : 'Importada de Airbnb'),
+          limpiezaHecha: !!extra.limpiezaHecha,
         };
       });
   }
 
+  // Guarda los datos que el usuario edita a mano en una reserva de Airbnb
+  // (nombre, personas, precio…). Se guardan por UID en `estado.airbnbDatos`,
+  // que SÍ se sincroniza con la nube y sobrevive a la actualización horaria.
+  function guardarDatosAirbnb(id, datos) {
+    if (!String(id).startsWith('ab_')) return;
+    if (!estado.airbnbDatos) estado.airbnbDatos = {};
+    estado.airbnbDatos[id] = { ...(estado.airbnbDatos[id] || {}), ...datos };
+    // Reflejar el cambio en la capa en memoria de inmediato.
+    const ov = overlayAirbnb.find((r) => r.id === id);
+    if (ov) Object.assign(ov, datos);
+    guardar();
+  }
+
   // Marca (o desmarca) la limpieza hecha tras la salida de una reserva.
   function marcarLimpieza(id, hecha) {
-    // Reservas de Airbnb: no están en el estado; guardamos solo el "hecho" en
-    // un pequeño mapa que sí se sincroniza (por su UID estable).
+    // Reservas de Airbnb: no están en el estado; guardamos el "hecho" en el
+    // mapa airbnbDatos (por su UID estable), que sí se sincroniza.
     if (String(id).startsWith('ab_')) {
-      if (!estado.airbnbLimpieza) estado.airbnbLimpieza = {};
-      if (hecha) estado.airbnbLimpieza[id] = true; else delete estado.airbnbLimpieza[id];
-      const ov = overlayAirbnb.find((r) => r.id === id);
-      if (ov) ov.limpiezaHecha = !!hecha;
-      guardar();
+      guardarDatosAirbnb(id, { limpiezaHecha: !!hecha });
       return;
     }
     const r = reservaPorId(id);
@@ -270,7 +291,7 @@
     ORIGENES, ESTADOS_PAGO, TIPOS_UNIDAD,
     cargar, guardar, obtener, config, moneda, origen, estadoPago,
     unidades, unidadPorId, guardarUnidad, eliminarUnidad,
-    reservas, reservaPorId, guardarReserva, eliminarReserva, marcarLimpieza, aplicarAirbnb,
+    reservas, reservaPorId, guardarReserva, eliminarReserva, marcarLimpieza, aplicarAirbnb, guardarDatosAirbnb,
     clientes, clientePorId, guardarCliente, eliminarCliente,
     guardarConfig, exportarJSON, importarJSON, reiniciar,
     registrarSync, aplicarRemoto,
