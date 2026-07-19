@@ -125,8 +125,9 @@
         <td>${esBloqueo ? '<span class="tenue">—</span>' : insigniaPago(r)}</td>
         <td class="nowrap">${esBloqueo ? '—' : U.formatoDinero(r.precioTotal, S.moneda())}</td>
         <td><div class="tabla__acciones">
+          ${r.importadaAirbnb ? '<span class="tenue" title="Importada de Airbnb (solo lectura)">🔗</span>' : `
           <button class="btn btn--sm btn--fantasma" data-editar="${r.id}" title="Editar">✏️</button>
-          <button class="btn btn--sm btn--fantasma" data-borrar="${r.id}" title="Eliminar">🗑️</button>
+          <button class="btn btn--sm btn--fantasma" data-borrar="${r.id}" title="Eliminar">🗑️</button>`}
         </div></td>
       </tr>`;
   }
@@ -147,30 +148,38 @@
     const unidad = S.unidadPorId(r.unidadId);
     const ori = S.origen(r.origen);
     const esBloqueo = r.origen === 'bloqueo';
+    const esAirbnb = !!r.importadaAirbnb;
     const f = (k, v) => `<div class="detalle-fila"><span class="detalle-fila__k">${k}</span><span class="detalle-fila__v">${v}</span></div>`;
 
-    UI.abrirModal(esBloqueo ? '🔒 Bloqueo' : (r.cliente || 'Reserva'), `
+    // Las reservas importadas de Airbnb son de solo lectura (se actualizan solas).
+    const pie = esAirbnb
+      ? `<p class="suave" style="font-size:13px;margin-top:16px">🔗 Importada de Airbnb. Se sincroniza automáticamente y no se puede editar aquí.</p>`
+      : `<div class="modal__pie mt">
+        <button class="btn btn--peligro" id="detBorrar">🗑️ Eliminar</button>
+        <button class="btn btn--primario" id="detEditar">✏️ Editar</button>
+      </div>`;
+
+    UI.abrirModal(esBloqueo ? '🔒 Bloqueo' : (esAirbnb ? '🩷 Reserva Airbnb' : (r.cliente || 'Reserva')), `
       <div style="margin-bottom:12px"><span class="insignia" style="background:${ori.color};color:#fff">${ori.emoji} ${ori.etiqueta}</span></div>
       ${f('Alojamiento', unidad ? U.escapar(unidad.nombre) : '—')}
       ${unidad && unidad.componentes && unidad.componentes.length ? f('Bloquea', unidad.componentes.map((c) => { const x = S.unidadPorId(c); return x ? U.escapar(x.nombre) : c; }).join(', ')) : ''}
       ${f('Entrada', U.formatoLargo(r.entrada))}
       ${f('Salida', U.formatoLargo(r.salida))}
       ${f('Noches', U.noches(r.entrada, r.salida))}
-      ${!esBloqueo ? f('Personas', r.personas || 1) : ''}
-      ${!esBloqueo && r.telefono ? f('Teléfono', `<a href="tel:${U.escapar(r.telefono)}">${U.escapar(r.telefono)}</a>`) : ''}
-      ${!esBloqueo ? f('Precio', U.formatoDinero(r.precioTotal, S.moneda())) : ''}
-      ${!esBloqueo ? f('Pagado', `${U.formatoDinero(r.pagado, S.moneda())} · ${S.estadoPago(r.estadoPago).etiqueta}`) : ''}
-      ${!esBloqueo && M.saldo(r) > 0 ? f('Saldo', `<span style="color:var(--color-error)">${U.formatoDinero(M.saldo(r), S.moneda())}</span>`) : ''}
+      ${!esBloqueo && !esAirbnb ? f('Personas', r.personas || 1) : ''}
+      ${!esBloqueo && !esAirbnb && r.telefono ? f('Teléfono', `<a href="tel:${U.escapar(r.telefono)}">${U.escapar(r.telefono)}</a>`) : ''}
+      ${!esBloqueo && !esAirbnb ? f('Precio', U.formatoDinero(r.precioTotal, S.moneda())) : ''}
+      ${!esBloqueo && !esAirbnb ? f('Pagado', `${U.formatoDinero(r.pagado, S.moneda())} · ${S.estadoPago(r.estadoPago).etiqueta}`) : ''}
+      ${!esBloqueo && !esAirbnb && M.saldo(r) > 0 ? f('Saldo', `<span style="color:var(--color-error)">${U.formatoDinero(M.saldo(r), S.moneda())}</span>`) : ''}
       ${r.observaciones ? `<div class="mt"><strong>Observaciones:</strong><br>${U.escapar(r.observaciones)}</div>` : ''}
-      <div class="modal__pie mt">
-        <button class="btn btn--peligro" id="detBorrar">🗑️ Eliminar</button>
-        <button class="btn btn--primario" id="detEditar">✏️ Editar</button>
-      </div>
+      ${pie}
     `);
-    document.getElementById('detEditar').onclick = () => abrirFormulario(id);
-    document.getElementById('detBorrar').onclick = async () => {
-      if (await UI.confirmar('¿Eliminar?')) { S.eliminarReserva(id); UI.toast('Eliminada', 'exito'); UI.cerrarModal(); window.AgendaApp.repintar(); }
-    };
+    if (!esAirbnb) {
+      document.getElementById('detEditar').onclick = () => abrirFormulario(id);
+      document.getElementById('detBorrar').onclick = async () => {
+        if (await UI.confirmar('¿Eliminar?')) { S.eliminarReserva(id); UI.toast('Eliminada', 'exito'); UI.cerrarModal(); window.AgendaApp.repintar(); }
+      };
+    }
   }
 
   // ---------------------------------------------------------
@@ -183,6 +192,7 @@
       return;
     }
     const r = id ? S.reservaPorId(id) : null;
+    if (r && r.importadaAirbnb) { verDetalle(id); return; } // solo lectura
     const hoy = U.hoyISO();
     const val = {
       unidadId: (r && r.unidadId) || (datosIniciales && datosIniciales.unidadId) || S.unidades()[0].id,

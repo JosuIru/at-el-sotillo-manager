@@ -1,0 +1,103 @@
+{
+  "fuente": "airbnb-ical",
+  "reservas": [
+    {
+      "uid": "1418fb94e984-4844da29bda0779b88d94495c87fde7a@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-07-18",
+      "salida": "2026-07-19",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "7f662ec65913-5c20e4f57ac9e3d5d51bf61a5672166f@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-07-24",
+      "salida": "2026-07-26",
+      "tipo": "bloqueo"
+    },
+    {
+      "uid": "1418fb94e984-90d5f930eb7cc84b637879b391ee2e6d@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-07-30",
+      "salida": "2026-08-01",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-4979ce04be1b9612ba3b2a631e1ba2d1@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-08-01",
+      "salida": "2026-08-03",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-4bdd5393a394add02081acc0403c97f6@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-08-05",
+      "salida": "2026-08-08",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-ca103e82daab83f5845928d043fbef10@airbnb.com",
+      "unidadId": "sotillo2",
+      "entrada": "2026-08-07",
+      "salida": "2026-08-09",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-60e0401b186b7531227615324f7f7701@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-08-08",
+      "salida": "2026-08-15",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-e1e2d27ceb523e8833970e053100c2fd@airbnb.com",
+      "unidadId": "sotillo2",
+      "entrada": "2026-08-11",
+      "salida": "2026-08-13",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-13b4645e255b10f0a24d5d593780ef09@airbnb.com",
+      "unidadId": "sotillo2",
+      "entrada": "2026-08-14",
+      "salida": "2026-08-16",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-c5804f084a654d9dfea5f6cbbb42dfd9@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-08-15",
+      "salida": "2026-08-16",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "1418fb94e984-6b8c400d6ce005b317dcc151ef514cf0@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-08-17",
+      "salida": "2026-08-18",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "7f662ec65913-0865310830800f0f612d52299cae1500@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-08-19",
+      "salida": "2026-08-27",
+      "tipo": "bloqueo"
+    },
+    {
+      "uid": "1418fb94e984-bc8c59ece51fc7f0a146d71ae1b39d26@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-10-25",
+      "salida": "2026-10-30",
+      "tipo": "reserva"
+    },
+    {
+      "uid": "7f662ec65913-95d17cab42b9c0ff1c9a10c44cef534e@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-10-31",
+      "salida": "2027-07-20",
+      "tipo": "bloqueo"
+    }
+  ]
+}

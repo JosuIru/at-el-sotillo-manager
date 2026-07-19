@@ -4,7 +4,7 @@
    Estrategia: cache-first para los recursos propios; al cambiar de
    versión (VERSION) se limpian las cachés antiguas.
    ============================================================ */
-const VERSION = 'elsotillo-v4';
+const VERSION = 'elsotillo-v5';
 const RECURSOS = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const RECURSOS = [
   './js/estadisticas.js',
   './js/alojamientos.js',
   './js/ajustes.js',
+  './js/airbnb-sync.js',
   './js/app.js',
   './js/sync-firebase.js',
   './manifest.webmanifest',
@@ -45,6 +46,21 @@ self.addEventListener('activate', (evento) => {
 self.addEventListener('fetch', (evento) => {
   const req = evento.request;
   if (req.method !== 'GET') return;
+
+  // El calendario de Airbnb cambia cada hora: red primero, caché como respaldo.
+  if (req.url.includes('/data/airbnb.json')) {
+    evento.respondWith(
+      fetch(req).then((resp) => {
+        if (resp && resp.status === 200) {
+          const copia = resp.clone();
+          caches.open(VERSION).then((cache) => cache.put(req, copia));
+        }
+        return resp;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
   evento.respondWith(
     caches.match(req).then((cacheada) => {
       if (cacheada) return cacheada;

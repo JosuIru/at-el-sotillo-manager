@@ -159,6 +159,64 @@
     guardar();
   }
 
+  // ---- Sincronización con calendarios externos (Airbnb, iCal) ----------
+  // Concilia las reservas importadas de Airbnb dentro del estado. Es
+  // IDEMPOTENTE: solo persiste (y empuja a la nube) si algo cambió de verdad,
+  // así no genera bucles ni escrituras innecesarias entre dispositivos. Las
+  // reservas importadas llevan `importadaAirbnb: true` y son de solo lectura.
+  // `items` = [{ uid, unidadId, entrada, salida, tipo }] (tipo: 'reserva'|'bloqueo').
+  function sincronizarAirbnb(items) {
+    if (!Array.isArray(items)) return 0;
+    let cambios = 0;
+    const vistos = new Set();
+
+    items.forEach((it) => {
+      if (!it || !it.uid || !it.unidadId || !it.entrada || !it.salida) return;
+      const id = 'ab_' + it.uid;
+      vistos.add(id);
+      const esBloqueo = it.tipo === 'bloqueo';
+      const idx = estado.reservas.findIndex((r) => r.id === id);
+      if (idx === -1) {
+        estado.reservas.push({
+          id,
+          importadaAirbnb: true,
+          origen: esBloqueo ? 'bloqueo' : 'airbnb',
+          cliente: esBloqueo ? '' : 'Reserva Airbnb',
+          telefono: '',
+          personas: esBloqueo ? 0 : 2,
+          unidadId: it.unidadId,
+          entrada: it.entrada,
+          salida: it.salida,
+          precioTotal: 0,
+          pagado: 0,
+          estadoPago: 'pagado',
+          observaciones: esBloqueo ? 'Airbnb · no disponible' : 'Importada de Airbnb',
+          limpiezaHecha: false,
+          creada: U.hoyISO(),
+        });
+        cambios++;
+      } else {
+        // Actualizamos solo las fechas/unidad; conservamos lo editable en local
+        // (p. ej. si se marcó la limpieza hecha).
+        const r = estado.reservas[idx];
+        if (r.entrada !== it.entrada || r.salida !== it.salida || r.unidadId !== it.unidadId) {
+          r.entrada = it.entrada;
+          r.salida = it.salida;
+          r.unidadId = it.unidadId;
+          cambios++;
+        }
+      }
+    });
+
+    // Eliminamos las importadas de Airbnb que ya no están en el calendario.
+    const antes = estado.reservas.length;
+    estado.reservas = estado.reservas.filter((r) => !r.importadaAirbnb || vistos.has(r.id));
+    cambios += antes - estado.reservas.length;
+
+    if (cambios > 0) guardar();
+    return cambios;
+  }
+
   // Marca (o desmarca) la limpieza hecha tras la salida de una reserva.
   function marcarLimpieza(id, hecha) {
     const r = reservaPorId(id);
@@ -217,7 +275,7 @@
     ORIGENES, ESTADOS_PAGO, TIPOS_UNIDAD,
     cargar, guardar, obtener, config, moneda, origen, estadoPago,
     unidades, unidadPorId, guardarUnidad, eliminarUnidad,
-    reservas, reservaPorId, guardarReserva, eliminarReserva, marcarLimpieza,
+    reservas, reservaPorId, guardarReserva, eliminarReserva, marcarLimpieza, sincronizarAirbnb,
     clientes, clientePorId, guardarCliente, eliminarCliente,
     guardarConfig, exportarJSON, importarJSON, reiniciar,
     registrarSync, aplicarRemoto,

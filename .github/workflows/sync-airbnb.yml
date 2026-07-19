@@ -1,0 +1,45 @@
+name: Sincronizar Airbnb
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Cada hora, en el minuto 17 (hora UTC).
+    - cron: '17 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-airbnb
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Descargar calendarios de Airbnb y generar data/airbnb.json
+        env:
+          AIRBNB_ICAL_APTO1: ${{ secrets.AIRBNB_ICAL_APTO1 }}
+          AIRBNB_ICAL_SOTILLO2: ${{ secrets.AIRBNB_ICAL_SOTILLO2 }}
+        run: node scripts/sync-airbnb.mjs
+
+      - name: Guardar cambios si el calendario cambió
+        run: |
+          if [ -n "$(git status --porcelain data/airbnb.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/airbnb.json
+            git commit -m "Actualizar reservas de Airbnb"
+            git push
+            echo "Calendario actualizado."
+          else
+            echo "Sin cambios en el calendario."
+          fi

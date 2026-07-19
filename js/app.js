@@ -62,6 +62,9 @@
 
     irA('panel');
 
+    // Importar el calendario de Airbnb (data/airbnb.json) tras cargar el estado.
+    if (window.AgendaAirbnb) window.AgendaAirbnb.sincronizar();
+
     // PWA: registrar service worker (solo sobre http/https, no en file://).
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW no registrado:', err));
