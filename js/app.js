@@ -67,7 +67,21 @@
 
     // PWA: registrar service worker (solo sobre http/https, no en file://).
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW no registrado:', err));
+      // Cuando una versión nueva toma el control, recargamos una vez para que
+      // el usuario no se quede con una versión antigua en caché.
+      let recargando = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (recargando) return;
+        recargando = true;
+        window.location.reload();
+      });
+      navigator.serviceWorker.register('sw.js').then((registro) => {
+        registro.update(); // comprobar si hay versión nueva al abrir
+        // Comprobar también cada vez que se vuelve a la app (PWA instalada).
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) registro.update();
+        });
+      }).catch((err) => console.warn('SW no registrado:', err));
     }
   }
 
