@@ -89,7 +89,14 @@
       "uid": "7f662ec65913-95d17cab42b9c0ff1c9a10c44cef534e@airbnb.com",
       "unidadId": "apto1",
       "entrada": "2026-10-31",
-      "salida": "2027-07-23",
+      "salida": "2027-07-24",
+      "tipo": "bloqueo"
+    },
+    {
+      "uid": "7f662ec65913-7672e913a7bde91cc7f415cbb0ca9df3@airbnb.com",
+      "unidadId": "sotillo2",
+      "entrada": "2027-07-23",
+      "salida": "2027-07-24",
       "tipo": "bloqueo"
     }
   ]
