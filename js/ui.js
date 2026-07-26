@@ -12,20 +12,75 @@
   const tituloEl = () => document.getElementById('modalTitulo');
   const cuerpoEl = () => document.getElementById('modalCuerpo');
 
+  /* ---- Scroll de fondo y teclado del móvil -------------------------------
+     En iOS `body { overflow: hidden }` no basta: hay que fijar el body para
+     que el gesto no arrastre la página de detrás del modal. Y cuando aparece
+     el teclado el viewport visible se encoge sin que cambie el layout, así que
+     ajustamos la altura del overlay a `visualViewport` para que el pie del
+     formulario (botón de guardar) siga siendo alcanzable.                    */
+  let posicionScrollGuardada = 0;
+
+  function bloquearScrollFondo() {
+    posicionScrollGuardada = window.scrollY || window.pageYOffset || 0;
+    const estilosBody = document.body.style;
+    estilosBody.position = 'fixed';
+    estilosBody.top = `-${posicionScrollGuardada}px`;
+    estilosBody.left = '0';
+    estilosBody.right = '0';
+    estilosBody.width = '100%';
+    estilosBody.overflow = 'hidden';
+  }
+
+  function liberarScrollFondo() {
+    const estilosBody = document.body.style;
+    estilosBody.position = '';
+    estilosBody.top = '';
+    estilosBody.left = '';
+    estilosBody.right = '';
+    estilosBody.width = '';
+    estilosBody.overflow = '';
+    window.scrollTo(0, posicionScrollGuardada);
+  }
+
+  function ajustarOverlayAlVisualViewport() {
+    const viewportVisible = window.visualViewport;
+    const capa = overlay();
+    if (!viewportVisible || !capa || capa.hidden) return;
+    capa.style.height = `${viewportVisible.height}px`;
+    capa.style.transform = `translateY(${viewportVisible.offsetTop}px)`;
+  }
+
+  function restaurarAlturaOverlay() {
+    const capa = overlay();
+    if (!capa) return;
+    capa.style.height = '';
+    capa.style.transform = '';
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', ajustarOverlayAlVisualViewport);
+    window.visualViewport.addEventListener('scroll', ajustarOverlayAlVisualViewport);
+  }
+
   function abrirModal(titulo, htmlCuerpo) {
     tituloEl().textContent = titulo;
     cuerpoEl().innerHTML = htmlCuerpo;
+    cuerpoEl().scrollTop = 0;
     overlay().hidden = false;
-    document.body.style.overflow = 'hidden';
-    // Foco al primer campo si lo hay.
+    bloquearScrollFondo();
+    ajustarOverlayAlVisualViewport();
+    // Foco al primer campo si lo hay. En móvil no, para que el teclado no tape
+    // el formulario nada más abrirlo.
+    const esPantallaPequena = window.matchMedia('(max-width: 780px)').matches;
     const primerCampo = cuerpoEl().querySelector('input, select, textarea, button');
-    if (primerCampo) setTimeout(() => primerCampo.focus(), 30);
+    if (primerCampo && !esPantallaPequena) setTimeout(() => primerCampo.focus(), 30);
   }
 
   function cerrarModal() {
     overlay().hidden = true;
     cuerpoEl().innerHTML = '';
-    document.body.style.overflow = '';
+    restaurarAlturaOverlay();
+    liberarScrollFondo();
   }
 
   function toast(mensaje, tipo) {

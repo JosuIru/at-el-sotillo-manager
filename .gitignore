@@ -1,0 +1,7 @@
+# Credenciales de servicio de Firebase Admin — NUNCA deben subirse
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Dependencias y artefactos
+node_modules/
+.DS_Store

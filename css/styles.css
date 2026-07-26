@@ -398,12 +398,14 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ===== Modal ===== */
 .modal-overlay {
-  position: fixed; inset: 0;
+  /* top/height por separado (no `inset`) para que el JS pueda ajustar la altura
+     al viewport visible cuando se abre el teclado del móvil. */
+  position: fixed; top: 0; left: 0; right: 0; height: 100%;
   background: rgba(15, 23, 42, .5);
   display: flex; align-items: flex-start; justify-content: center;
   padding: 40px 16px;
   z-index: 60;
-  overflow-y: auto;
+  overflow: hidden;                 /* el scroll vive dentro del modal, no aquí */
 }
 .modal-overlay[hidden] { display: none; }
 .modal {
@@ -413,13 +415,24 @@ button { font-family: inherit; cursor: pointer; }
   width: 100%;
   max-width: 560px;
   animation: modal-in .16s ease-out;
+  /* Nunca más alto que el hueco disponible: la cabecera queda fija y el cuerpo scrollea. */
+  display: flex; flex-direction: column;
+  max-height: 100%;
+  min-height: 0;
 }
 @keyframes modal-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
-.modal__header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-borde); }
+@keyframes modal-in-desde-abajo { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.modal__header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-borde); flex-shrink: 0; }
 .modal__title { font-size: 17px; margin: 0; }
 .modal__close { border: none; background: transparent; font-size: 18px; color: var(--color-texto-suave); padding: 4px 8px; border-radius: var(--radio-sm); }
 .modal__close:hover { background: var(--color-superficie-2); }
-.modal__body { padding: 20px; }
+.modal__body {
+  padding: 20px;
+  overflow-y: auto;                 /* aquí se scrollea el formulario largo */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;     /* evita que el gesto arrastre la página de fondo */
+  min-height: 0;
+}
 .modal__pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
 /* Detalle de reserva dentro del modal */
@@ -480,7 +493,12 @@ button { font-family: inherit; cursor: pointer; }
   .campos-2, .campos-3 { grid-template-columns: 1fr; }
   .selector-origen { grid-template-columns: 1fr; }
   .modal-overlay { padding: 0; align-items: flex-end; }
-  .modal { max-width: none; border-radius: var(--radio) var(--radio) 0 0; }
+  /* Hoja inferior: entra desde abajo, no desde arriba (si no, asoma fuera de pantalla). */
+  .modal { max-width: none; border-radius: var(--radio) var(--radio) 0 0; animation-name: modal-in-desde-abajo; }
+  /* Hueco para la barra de gestos / notch: el botón de guardar queda alcanzable. */
+  .modal__body { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  /* 16px mínimos: por debajo, iOS hace zoom automático al enfocar y descoloca el formulario. */
+  .campo input, .campo select, .campo textarea { font-size: 16px; }
   .btn { padding: 11px 16px; }                  /* objetivos táctiles mayores */
   .kpi__valor { font-size: 24px; }
 }
