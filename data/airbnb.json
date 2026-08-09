@@ -65,6 +65,13 @@
       "tipo": "bloqueo"
     },
     {
+      "uid": "7f662ec65913-035e2bef524a7c7630f37f331d8e4ca5@airbnb.com",
+      "unidadId": "sotillo2",
+      "entrada": "2026-08-22",
+      "salida": "2026-08-23",
+      "tipo": "bloqueo"
+    },
+    {
       "uid": "1418fb94e984-bc8c59ece51fc7f0a146d71ae1b39d26@airbnb.com",
       "unidadId": "apto1",
       "entrada": "2026-10-25",
