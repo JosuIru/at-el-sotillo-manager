@@ -70,13 +70,6 @@
       "entrada": "2026-10-31",
       "salida": "2027-08-14",
       "tipo": "bloqueo"
-    },
-    {
-      "uid": "7f662ec65913-7cae595f6f2dfb249ebced40fb0d902d@airbnb.com",
-      "unidadId": "sotillo2",
-      "entrada": "2027-08-13",
-      "salida": "2027-08-14",
-      "tipo": "bloqueo"
     }
   ]
 }
