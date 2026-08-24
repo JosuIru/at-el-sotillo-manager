@@ -509,3 +509,21 @@ button { font-family: inherit; cursor: pointer; }
   body { background: #fff; }
   .app-main { max-width: none; }
 }
+
+/* Títulos de bloque de la pestaña Reservas (Próximas / Pasadas). */
+.bloque-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--color-texto-suave);
+  margin-bottom: 8px;
+}
+.bloque-cuenta {
+  background: var(--color-superficie-2);
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 13px;
+  color: var(--color-texto-tenue);
+}

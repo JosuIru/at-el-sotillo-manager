@@ -73,6 +73,33 @@
       .sort((a, b) => b.entrada.localeCompare(a.entrada));
   }
 
+  /* Separa la lista en dos bloques para que la pestaña sea útil de un vistazo:
+     - Próximas: las que aún no han terminado, con la más cercana ARRIBA.
+       (Ordenar todo descendente dejaba la reserva más lejana en el futuro la
+       primera de la lista, que es justo la que menos importa hoy.)
+     - Pasadas: histórico, de la más reciente a la más antigua. */
+  function porBloques(lista) {
+    const hoy = U.hoyISO();
+    const proximas = lista.filter((r) => r.salida > hoy)
+      .sort((a, b) => a.entrada.localeCompare(b.entrada));
+    const pasadas = lista.filter((r) => r.salida <= hoy)
+      .sort((a, b) => b.entrada.localeCompare(a.entrada));
+    return { proximas, pasadas };
+  }
+
+  function tabla(filas) {
+    return `
+      <div class="tabla-wrap">
+        <table class="tabla tabla--clic">
+          <thead><tr>
+            <th>Cliente</th><th>Alojamiento</th><th>Entrada</th><th>Salida</th>
+            <th class="centro">Noches</th><th class="nowrap">Precio</th><th></th>
+          </tr></thead>
+          <tbody>${filas.map(fila).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+
   function pintarLista() {
     const cont = document.getElementById('listaReservas');
     const lista = reservasFiltradas();
@@ -80,16 +107,10 @@
       cont.innerHTML = `<div class="vacio"><div class="vacio__icono">📭</div>No hay reservas que coincidan.</div>`;
       return;
     }
+    const { proximas, pasadas } = porBloques(lista);
     cont.innerHTML = `
-      <div class="tabla-wrap mt">
-        <table class="tabla tabla--clic">
-          <thead><tr>
-            <th>Cliente</th><th>Alojamiento</th><th>Entrada</th><th>Salida</th>
-            <th class="centro">Noches</th><th>Pago</th><th class="nowrap">Precio</th><th></th>
-          </tr></thead>
-          <tbody>${lista.map(fila).join('')}</tbody>
-        </table>
-      </div>`;
+      ${proximas.length ? `<h3 class="bloque-titulo mt">Próximas <span class="bloque-cuenta">${proximas.length}</span></h3>${tabla(proximas)}` : ''}
+      ${pasadas.length ? `<h3 class="bloque-titulo mt">Pasadas <span class="bloque-cuenta">${pasadas.length}</span></h3>${tabla(pasadas)}` : ''}`;
 
     cont.querySelectorAll('tbody tr').forEach((tr) => {
       tr.onclick = (e) => { if (!e.target.closest('.tabla__acciones')) verDetalle(tr.dataset.id); };
@@ -122,7 +143,6 @@
         <td class="nowrap">${U.formatoCorto(r.entrada)}</td>
         <td class="nowrap">${U.formatoCorto(r.salida)}</td>
         <td class="centro">${U.noches(r.entrada, r.salida)}</td>
-        <td>${esBloqueo ? '<span class="tenue">—</span>' : insigniaPago(r)}</td>
         <td class="nowrap">${esBloqueo ? '—' : U.formatoDinero(r.precioTotal, S.moneda())}</td>
         <td><div class="tabla__acciones">
           ${r.importadaAirbnb ? `<button class="btn btn--sm btn--fantasma" data-editar="${r.id}" title="Editar datos (Airbnb)">✏️</button>` : `
@@ -132,12 +152,6 @@
       </tr>`;
   }
 
-  function insigniaPago(r) {
-    const ep = S.estadoPago(r.estadoPago);
-    const saldo = M.saldo(r);
-    const txt = ep.id === 'parcial' && saldo > 0 ? `Anticipo · falta ${U.formatoDinero(saldo, S.moneda())}` : ep.etiqueta;
-    return `<span class="insignia" style="background:transparent;color:${ep.color};border:1px solid currentColor">${txt}</span>`;
-  }
 
   // ---------------------------------------------------------
   // Ficha de detalle
@@ -174,7 +188,6 @@
       ${!esBloqueo ? f('Personas', r.personas || 1) : ''}
       ${!esBloqueo && r.telefono ? f('Teléfono', `<a href="tel:${U.escapar(r.telefono)}">${U.escapar(r.telefono)}</a>`) : ''}
       ${!esBloqueo ? f('Precio', U.formatoDinero(r.precioTotal, S.moneda())) : ''}
-      ${!esBloqueo ? f('Pagado', `${U.formatoDinero(r.pagado, S.moneda())} · ${S.estadoPago(r.estadoPago).etiqueta}`) : ''}
       ${!esBloqueo && M.saldo(r) > 0 ? f('Saldo', `<span style="color:var(--color-error)">${U.formatoDinero(M.saldo(r), S.moneda())}</span>`) : ''}
       ${r.observaciones && !(esAirbnb && r.observaciones === 'Importada de Airbnb') ? `<div class="mt"><strong>Observaciones:</strong><br>${U.escapar(r.observaciones)}</div>` : ''}
       ${pie}
@@ -221,21 +234,9 @@
             <input name="personas" type="number" min="1" value="${r.personas || 2}" />
           </div>
         </div>
-        <div class="campos-2">
-          <div class="campo">
-            <label>Precio total (${S.moneda()})</label>
-            <input name="precioTotal" type="number" min="0" step="0.01" value="${r.precioTotal || ''}" placeholder="0" />
-          </div>
-          <div class="campo">
-            <label>Estado de pago</label>
-            <select name="estadoPago">
-              ${S.ESTADOS_PAGO.map((e) => `<option value="${e.id}" ${r.estadoPago === e.id ? 'selected' : ''}>${e.etiqueta}</option>`).join('')}
-            </select>
-          </div>
-        </div>
         <div class="campo">
-          <label>Pagado / anticipo (${S.moneda()})</label>
-          <input name="pagado" type="number" min="0" step="0.01" value="${r.pagado || 0}" />
+          <label>Precio total (${S.moneda()})</label>
+          <input name="precioTotal" type="number" min="0" step="0.01" value="${r.precioTotal || ''}" placeholder="0" />
         </div>
         <div class="campo">
           <label>Observaciones</label>
@@ -258,8 +259,9 @@
         telefono: form.telefono.value.trim(),
         personas: Number(form.personas.value) || 1,
         precioTotal: Number(form.precioTotal.value) || 0,
-        pagado: Number(form.pagado.value) || 0,
-        estadoPago: form.estadoPago.value,
+        // Se cobra siempre el total, así que la reserva nace pagada por completo.
+        pagado: Number(form.precioTotal.value) || 0,
+        estadoPago: 'pagado',
         observaciones: form.observaciones.value.trim(),
       });
       UI.toast('Datos guardados', 'exito');
@@ -344,22 +346,10 @@
               <input name="personas" type="number" min="1" value="${val.personas}" />
             </div>
           </div>
-          <div class="campos-2">
-            <div class="campo">
-              <label>Precio total (${S.moneda()})</label>
-              <input name="precioTotal" type="number" min="0" step="0.01" value="${val.precioTotal}" placeholder="0" />
-              <span class="campo__ayuda" id="ayudaPrecio"></span>
-            </div>
-            <div class="campo">
-              <label>Estado de pago</label>
-              <select name="estadoPago">
-                ${S.ESTADOS_PAGO.map((e) => `<option value="${e.id}" ${val.estadoPago === e.id ? 'selected' : ''}>${e.etiqueta}</option>`).join('')}
-              </select>
-            </div>
-          </div>
           <div class="campo">
-            <label>Pagado / anticipo (${S.moneda()})</label>
-            <input name="pagado" type="number" min="0" step="0.01" value="${val.pagado}" />
+            <label>Precio total (${S.moneda()})</label>
+            <input name="precioTotal" type="number" min="0" step="0.01" value="${val.precioTotal}" placeholder="0" />
+            <span class="campo__ayuda" id="ayudaPrecio"></span>
           </div>
         </div>
 
@@ -472,8 +462,9 @@
         telefono: bloqueo ? '' : form.telefono.value.trim(),
         personas: bloqueo ? 0 : (Number(form.personas.value) || 1),
         precioTotal: bloqueo ? 0 : (Number(form.precioTotal.value) || 0),
-        pagado: bloqueo ? 0 : (Number(form.pagado.value) || 0),
-        estadoPago: bloqueo ? 'pagado' : form.estadoPago.value,
+        // Se cobra siempre el total, así que la reserva nace pagada por completo.
+        pagado: bloqueo ? 0 : (Number(form.precioTotal.value) || 0),
+        estadoPago: 'pagado',
       };
 
       // Validaciones que impiden guardar.

@@ -26,6 +26,16 @@
       <div class="tarjeta mt" id="tarjetaNube"></div>
 
       <div class="tarjeta mt">
+        <h3 class="tarjeta__titulo">Versión de la app</h3>
+        <p class="suave" style="font-size:13px">
+          Versión instalada: <strong id="cfgVersion">…</strong>.
+          Si algo no funciona bien y en otro móvil sí, pulsa aquí: descarga la
+          última versión y vuelve a abrir la app. No se pierde ningún dato.
+        </p>
+        <button class="btn mt-sm" id="btnActualizarApp">🔄 Buscar actualización</button>
+      </div>
+
+      <div class="tarjeta mt">
         <h3 class="tarjeta__titulo">Copias de seguridad</h3>
         <p class="suave" style="font-size:13px">Descarga todos tus datos en un archivo, o restáuralos desde una copia. Guárdalo en un sitio seguro (correo, nube…).</p>
         <div class="fila mt-sm">
@@ -81,6 +91,42 @@
       lector.readAsText(archivo);
       input.value = '';
     };
+
+    // Versión instalada + actualización forzada.
+    // Un móvil puede quedarse con una versión antigua guardada; esto la borra y
+    // descarga la actual sin tocar los datos (viven en localStorage/Firebase).
+    const elVersion = document.getElementById('cfgVersion');
+    if (elVersion) {
+      caches.keys()
+        .then((claves) => {
+          const propia = claves.find((c) => c.startsWith('elsotillo-'));
+          elVersion.textContent = propia ? propia.replace('elsotillo-', '') : 'sin caché';
+        })
+        .catch(() => { elVersion.textContent = 'desconocida'; });
+    }
+
+    const btnAct = document.getElementById('btnActualizarApp');
+    if (btnAct) {
+      btnAct.onclick = async () => {
+        btnAct.disabled = true;
+        btnAct.textContent = 'Actualizando…';
+        try {
+          const claves = await caches.keys();
+          await Promise.all(claves.map((c) => caches.delete(c)));
+          if ('serviceWorker' in navigator) {
+            const registros = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registros.map((r) => r.unregister()));
+          }
+          UI.toast('Descargando la última versión…', 'exito');
+          setTimeout(() => window.location.reload(true), 600);
+        } catch (err) {
+          console.warn('No se pudo actualizar:', err);
+          btnAct.disabled = false;
+          btnAct.textContent = '🔄 Buscar actualización';
+          UI.toast('No se pudo actualizar. Comprueba la conexión.', 'error');
+        }
+      };
+    }
 
     document.getElementById('btnReset').onclick = async () => {
       if (await UI.confirmar('Esto borrará todas las reservas y clientes. ¿Seguro?', 'Reiniciar')) {

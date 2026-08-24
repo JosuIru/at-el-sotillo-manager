@@ -1,10 +1,11 @@
 /* ============================================================
    sw.js — Service Worker de AT El Sotillo Manager.
    Cachea el "app shell" para que la app funcione sin conexión.
-   Estrategia: cache-first para los recursos propios; al cambiar de
-   versión (VERSION) se limpian las cachés antiguas.
+   Estrategia: red primero para el código (HTML/JS/CSS) con la caché como
+   respaldo sin cobertura; caché primero para lo que no cambia (iconos,
+   manifiesto). Al cambiar de versión (VERSION) se limpian las cachés antiguas.
    ============================================================ */
-const VERSION = 'elsotillo-v8';
+const VERSION = 'elsotillo-v9';
 const RECURSOS = [
   './',
   './index.html',
@@ -57,6 +58,30 @@ self.addEventListener('fetch', (evento) => {
         }
         return resp;
       }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // El código de la app (HTML, JS, CSS) va a RED PRIMERO, con la caché como
+  // respaldo si no hay cobertura.
+  //
+  // Antes era caché primero para todo, y eso tenía un fallo grave: un móvil que
+  // hubiera guardado una versión antigua se quedaba con ella indefinidamente, y
+  // los arreglos publicados no le llegaban nunca. El resto de recursos (iconos,
+  // manifiesto) sí siguen yendo a caché primero, porque no cambian.
+  const esCodigo = /\.(html|js|css)$/.test(new URL(req.url).pathname)
+    || req.mode === 'navigate'
+    || new URL(req.url).pathname.endsWith('/');
+
+  if (esCodigo) {
+    evento.respondWith(
+      fetch(req).then((resp) => {
+        if (resp && resp.status === 200 && resp.type === 'basic') {
+          const copia = resp.clone();
+          caches.open(VERSION).then((cache) => cache.put(req, copia));
+        }
+        return resp;
+      }).catch(() => caches.match(req).then((c) => c || caches.match('./index.html')))
     );
     return;
   }
