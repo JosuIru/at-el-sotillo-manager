@@ -149,7 +149,6 @@
     const ori = S.origen(r.origen);
     const esBloqueo = r.origen === 'bloqueo';
     const etiqueta = esBloqueo ? '🔒 ' + (U.escapar(r.observaciones) || 'Bloqueado') : U.escapar(r.cliente);
-    const marca = (!esBloqueo && M.saldo(r) > 0) ? ' 💰' : '';
     // Asas de redimensionado sólo si el extremo es visible en el mes.
     const asaIni = r.entrada >= inicioMes ? '<span class="barra-asa barra-asa--ini"></span>' : '';
     const asaFin = r.salida <= finMesISO ? '<span class="barra-asa barra-asa--fin"></span>' : '';
@@ -157,7 +156,7 @@
       data-reserva="${r.id}"
       title="${etiqueta} · ${U.formatoCorto(r.entrada)}→${U.formatoCorto(r.salida)} · arrastra para mover"
       style="grid-row:${filaGrid};grid-column:${colInicio} / span ${nEspan};background:${ori.color}">
-      ${asaIni}<span class="reserva-barra__txt">${etiqueta}${marca}</span>${asaFin}
+      ${asaIni}<span class="reserva-barra__txt">${etiqueta}</span>${asaFin}
     </div>`;
   }
 

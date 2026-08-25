@@ -188,7 +188,6 @@
       ${!esBloqueo ? f('Personas', r.personas || 1) : ''}
       ${!esBloqueo && r.telefono ? f('Teléfono', `<a href="tel:${U.escapar(r.telefono)}">${U.escapar(r.telefono)}</a>`) : ''}
       ${!esBloqueo ? f('Precio', U.formatoDinero(r.precioTotal, S.moneda())) : ''}
-      ${!esBloqueo && M.saldo(r) > 0 ? f('Saldo', `<span style="color:var(--color-error)">${U.formatoDinero(M.saldo(r), S.moneda())}</span>`) : ''}
       ${r.observaciones && !(esAirbnb && r.observaciones === 'Importada de Airbnb') ? `<div class="mt"><strong>Observaciones:</strong><br>${U.escapar(r.observaciones)}</div>` : ''}
       ${pie}
     `);

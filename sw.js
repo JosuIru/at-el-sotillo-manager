@@ -5,7 +5,7 @@
    respaldo sin cobertura; caché primero para lo que no cambia (iconos,
    manifiesto). Al cambiar de versión (VERSION) se limpian las cachés antiguas.
    ============================================================ */
-const VERSION = 'elsotillo-v9';
+const VERSION = 'elsotillo-v10';
 const RECURSOS = [
   './',
   './index.html',
