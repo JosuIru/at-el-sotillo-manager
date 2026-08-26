@@ -23,6 +23,13 @@
       "tipo": "reserva"
     },
     {
+      "uid": "7f662ec65913-ec00d6c3e1a390cb687d96168d38fbb1@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-09-04",
+      "salida": "2026-09-07",
+      "tipo": "bloqueo"
+    },
+    {
       "uid": "1418fb94e984-937c84aa4704dab26abfb8f641aa17e9@airbnb.com",
       "unidadId": "apto1",
       "entrada": "2026-09-14",
