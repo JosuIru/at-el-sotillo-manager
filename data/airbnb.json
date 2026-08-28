@@ -2,9 +2,9 @@
   "fuente": "airbnb-ical",
   "reservas": [
     {
-      "uid": "7f662ec65913-43833086dcbaea83555db36f0a179ee3@airbnb.com",
+      "uid": "7f662ec65913-10aaa1ebeacb968a1897f247d461a93e@airbnb.com",
       "unidadId": "apto1",
-      "entrada": "2026-08-25",
+      "entrada": "2026-08-26",
       "salida": "2026-08-27",
       "tipo": "bloqueo"
     },
@@ -61,7 +61,7 @@
       "uid": "7f662ec65913-95d17cab42b9c0ff1c9a10c44cef534e@airbnb.com",
       "unidadId": "apto1",
       "entrada": "2026-10-31",
-      "salida": "2027-08-28",
+      "salida": "2027-08-29",
       "tipo": "bloqueo"
     },
     {
@@ -72,10 +72,10 @@
       "tipo": "reserva"
     },
     {
-      "uid": "7f662ec65913-e8793853bb7c4c47ede83e40d31afff2@airbnb.com",
+      "uid": "7f662ec65913-821b52d35987d1d34231c8ef9ad5321e@airbnb.com",
       "unidadId": "sotillo2",
-      "entrada": "2027-08-27",
-      "salida": "2027-08-28",
+      "entrada": "2027-08-28",
+      "salida": "2027-08-29",
       "tipo": "bloqueo"
     }
   ]
