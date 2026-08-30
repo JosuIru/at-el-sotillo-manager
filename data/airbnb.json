@@ -58,11 +58,11 @@
       "tipo": "reserva"
     },
     {
-      "uid": "1418fb94e984-0002a1565895e36b8fcf2761bca88102@airbnb.com",
+      "uid": "7f662ec65913-db22407c8b91f445505381b7614efd86@airbnb.com",
       "unidadId": "sotillo2",
       "entrada": "2026-12-31",
       "salida": "2027-01-03",
-      "tipo": "reserva"
+      "tipo": "bloqueo"
     },
     {
       "uid": "7f662ec65913-816eeca23970e5c4d9d15eaf06b88583@airbnb.com",
