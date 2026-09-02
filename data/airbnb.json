@@ -30,25 +30,11 @@
       "tipo": "reserva"
     },
     {
-      "uid": "7f662ec65913-95d17cab42b9c0ff1c9a10c44cef534e@airbnb.com",
-      "unidadId": "apto1",
-      "entrada": "2026-10-31",
-      "salida": "2027-09-03",
-      "tipo": "bloqueo"
-    },
-    {
       "uid": "1418fb94e984-075c2f1ed7eb85624a91625a7f1177e5@airbnb.com",
       "unidadId": "sotillo2",
       "entrada": "2026-12-18",
       "salida": "2026-12-20",
       "tipo": "reserva"
-    },
-    {
-      "uid": "7f662ec65913-db22407c8b91f445505381b7614efd86@airbnb.com",
-      "unidadId": "sotillo2",
-      "entrada": "2026-12-31",
-      "salida": "2027-01-03",
-      "tipo": "bloqueo"
     },
     {
       "uid": "7f662ec65913-8809266e0334dba7a14ea02cdf36f233@airbnb.com",
