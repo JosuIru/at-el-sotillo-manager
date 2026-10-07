@@ -2,6 +2,13 @@
   "fuente": "airbnb-ical",
   "reservas": [
     {
+      "uid": "1418fb94e984-c50ff170f517e512021c36a4b62a73d6@airbnb.com",
+      "unidadId": "apto1",
+      "entrada": "2026-10-07",
+      "salida": "2026-10-08",
+      "tipo": "reserva"
+    },
+    {
       "uid": "1418fb94e984-9058117212c88d5cad9133d261aaf4aa@airbnb.com",
       "unidadId": "apto1",
       "entrada": "2026-10-08",
