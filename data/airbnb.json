@@ -9,6 +9,13 @@
       "tipo": "bloqueo"
     },
     {
+      "uid": "7f662ec65913-87069b0c5b390896ef8fa40ad644380a@airbnb.com",
+      "unidadId": "sotillo2",
+      "entrada": "2026-11-20",
+      "salida": "2026-11-23",
+      "tipo": "bloqueo"
+    },
+    {
       "uid": "7f662ec65913-5f535dda81b1c5d00e384fc73c76a75f@airbnb.com",
       "unidadId": "sotillo2",
       "entrada": "2026-12-05",
@@ -54,7 +61,7 @@
       "uid": "7f662ec65913-946daf4a535d40a073d67eea917529c7@airbnb.com",
       "unidadId": "sotillo2",
       "entrada": "2027-11-03",
-      "salida": "2027-11-11",
+      "salida": "2027-11-12",
       "tipo": "bloqueo"
     }
   ]
